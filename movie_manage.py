@@ -1,9 +1,17 @@
-from flask import request, jsonify
+from flask import request, jsonify,render_template,url_for,redirect
 from models import *
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,date
+
+
+@app.route('/movie/<int:movie_id>')
+def movie_detail(movie_id):
+    movie = Movie.query.get(movie_id)
+    if not movie:
+        return jsonify({'error': 'Movie not found'}), 404
+
+    return render_template('movie_detail.html', movie=movie)
 
 @app.route('/add/movie/', methods=['POST'])
-@User.admin_required
 def add_movie():
     data = request.get_json()
     existing_movie = Movie.query.filter_by(name=data['name']).first()
@@ -168,22 +176,10 @@ def update_schedule():
             }), 200
 
 
-@app.route('/list/', methods=['GET'])
-@User.admin_or_user_required
-def list_movie(current_user):
-    play_date_str = request.form.get('play_date')
-    if not play_date_str:
-        return jsonify({
-            'error': 'play_date parameter is required'
-            }), 400
-    try:
-        play_date = datetime.strptime(play_date_str, '%Y-%m-%d').date() 
-    except ValueError:
-        return jsonify({
-            'error': 'Invalid date format'
-            }), 400
-
-    max_launching_date = play_date - timedelta(days=7)
+@app.route('/nowplaying', methods=['GET'])
+def now_playing_page():
+    play_date = date.today()
+    max_launching_date = play_date - timedelta(days=14)
     active_movies = Movie.query.filter(Movie.launching >= max_launching_date).all()
 
     movie_info = [{
@@ -191,23 +187,27 @@ def list_movie(current_user):
         'name': movie.name,
         'category': movie.info_category.name,
         'ticket_price': f'Rp {movie.ticket_price}',
+        'poster_path': movie.poster_path,
         'launching': movie.launching.strftime('%Y-%m-%d'),
         'schedules': [{
             'time': schedule.time.strftime('%H:%M'),
             'theater': schedule.info_theater.room if schedule.info_theater else None
         } for schedule in movie.schedules]
     } for movie in active_movies]
-    return jsonify(movie_info), 200
+
+    return render_template('nowplaying.html', movies=movie_info)
+
+
+
 
 
 @app.route('/search/', methods=['GET'])
-@User.admin_or_user_required
-def search_movie(current_user):
+def search_movie():
     query = request.args.get('query')
     if not query:
         return jsonify({
             'error': 'Query parameter is required'
-            }), 400
+        }), 400
 
     name_results = Movie.query.filter(Movie.name.ilike(f"%{query}%")).all()
     category_results = Movie.query.join(Category).filter(Category.name.ilike(f"%{query}%")).all()
@@ -221,7 +221,7 @@ def search_movie(current_user):
         }
         for movie in search_results
     ]
-    return jsonify(movie_info), 200
+    return render_template('search.html', movie_info=movie_info, query=query)
 
 
 @app.route('/buy/ticket', methods=['POST'])

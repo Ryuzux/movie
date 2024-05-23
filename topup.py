@@ -1,40 +1,30 @@
-from flask import request, jsonify
+from flask import request, jsonify,session,redirect,render_template,url_for
 from models import *
 
 @app.route('/topup/', methods=['POST'])
-@User.admin_or_user_required
-def topup(current_user):
+def topup():
     data = request.get_json()
     if 'amount' not in data:
-        return jsonify({
-            'error': 'amount must be provided'
-            }), 400
+        return jsonify({'error': 'amount must be provided'}), 400
 
     try:
         amount = int(data['amount'])
     except ValueError:
-        return jsonify({
-            'error': 'Amount must be an integer'
-            }), 400
+        return jsonify({'error': 'Amount must be an integer'}), 400
 
-    user = User.query.filter_by(username=current_user.username).first()
+    username = session.get('username')
+    if not username:
+        return jsonify({'error': 'User must be logged in'}), 403
+
+    user = User.query.filter_by(username=username).first()
     if not user:
-        return jsonify({
-            'error': 'User not found or does not match'
-            }), 404
+        return jsonify({'error': 'User not found or does not match'}), 404
 
-    new_topup = Topup(
-        user_id=user.id,
-        amount=amount,
-        is_confirmed=False
-    )
+    new_topup = Topup(user_id=user.id, amount=amount, is_confirmed=False)
     db.session.add(new_topup)
     db.session.commit()
 
-    return jsonify({
-        'topup_id':new_topup.id,
-        'message': 'Top-up request submitted successfully'
-        }), 200
+    return jsonify({'topup_id': new_topup.id, 'message': 'Top-up request submitted successfully'}), 200
 
 
 @app.route('/confirm/topup/', methods=['PUT'])

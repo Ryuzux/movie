@@ -1,0 +1,98 @@
+body{ 
+    font-family: Verdana, sans-serif; 
+    background-color: #021b39;
+}
+
+.dd{
+    background-color: #021b39;
+    color: white;
+}
+.dd:hover{
+    background-color: #021b39;
+    color:yellow;
+}
+
+np{
+    padding-bottom: 200px;
+}
+
+.img-fluid{
+    border-radius: 10px;
+}
+
+.container{
+    border-radius: 10px;
+    color:#021b39;
+}
+
+.carousel-inner{
+    width: 1400px; /* Lebar baru */
+    height: 600px; /* Tinggi baru */
+    overflow: hidden;
+    margin: auto;
+    border-radius: 20px;
+    box-shadow: #021f42;
+    box-shadow: 50px 0px 30px rgba(0, 0, 0, 0.5); 
+}
+
+.carousel-inner img {
+    width: 100%;
+    object-fit: cover;
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+
+    .carousel-inner img {
+        height: 200px; /* Adjust for smaller screens */
+    }
+}
+
+.cont {
+    display: flex;
+    justify-content:space-between;
+    align-content: center;
+    padding: 7px;
+    padding-top: 15px;
+    padding-right: 50px;
+    padding-left: 10px;
+    background-color: #021b39;
+}
+
+.btn{
+    background-color: #021b39;
+    border: none;
+    color:#faf7f6;
+    font-size: 15px;
+}
+.btn:hover{
+    background-color: #021b39;
+    color:yellow;
+}
+
+
+.logo{
+    height:55px;
+    width: 200px;
+    padding-right: 20px;
+}
+
+.movie-image {
+    width: 250px;
+    height: 350px;
+     
+}
+
+#profile-container{
+    display: flex;
+    margin-left: 15px;
+}
+
+/* On smaller screens, decrease text size */
+@media only screen and (max-width: 300px) {
+  .text { font-size: 7px; }
+}
+
+
