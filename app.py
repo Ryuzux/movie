@@ -7,7 +7,7 @@ from flask import render_template,redirect, url_for
 
 from flask import request, jsonify, session, render_template
 
-@app.route('/login/', methods=['GET','POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
@@ -19,22 +19,36 @@ def login():
             # Autentikasi berhasil, simpan informasi pengguna dalam sesi
             session['logged_in'] = True
             session['username'] = user.username
-            return redirect('/home')
+            session['user_id'] = user.id
+            session['role'] = user.role
+
+            # Pengalihan berdasarkan peran pengguna
+            if user.role == 'admin':
+                return redirect('/admin')
+            else:
+                return redirect('/home')
         else:
             # Autentikasi gagal, kembalikan pesan kesalahan
             return render_template('login.html', error='Invalid username or password')
 
     return render_template('login.html')
 
+@app.route('/admin')
+def admin_dashboard():
+    if 'logged_in' not in session or session.get('role') != 'admin':
+        return redirect('/login')
+    movies = Movie.query.order_by(Movie.id).all()
+    return render_template('admin_dashboard.html', movies=movies)
+
 @app.route('/logout', methods=['POST'])
 def logout():
-    session.pop('logged_in', None)  # Hapus status login dari session
+    session.pop('logged_in', None) 
     return redirect(url_for('home'))
 
 
 @app.route('/home')
 def home():
-    movies = Movie.query.all()  # Mengambil semua data film dari database
+    movies = Movie.query.all() 
     return render_template('home.html', movies=movies)
 
 

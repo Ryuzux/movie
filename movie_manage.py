@@ -1,90 +1,104 @@
-from flask import request, jsonify,render_template,url_for,redirect
+from flask import request, jsonify,render_template,url_for,redirect,session
 from models import *
 from datetime import datetime, timedelta,date
-
 
 @app.route('/movie/<int:movie_id>')
 def movie_detail(movie_id):
     movie = Movie.query.get(movie_id)
+    schedules = Schedule.query.filter_by(movie_id=movie_id).all()
     if not movie:
         return jsonify({'error': 'Movie not found'}), 404
 
-    return render_template('movie_detail.html', movie=movie)
+    return render_template('movie_detail.html', movie=movie, schedules=schedules)
 
 @app.route('/add/movie/', methods=['POST'])
 def add_movie():
     data = request.get_json()
-    existing_movie = Movie.query.filter_by(name=data['name']).first()
+    
     if 'name' not in data:
-        return jsonify({
-            'error': 'name movie must be input'
-        })
+        return jsonify({'error': 'name movie must be input'})
+    
+    existing_movie = Movie.query.filter_by(name=data['name']).first()
     if existing_movie:
-        return jsonify({
-            'error': "the movie currently airing"
-        })
+        return jsonify({'error': "the movie currently airing"})
+    
     if 'launching' not in data:
-        return jsonify({
-            'error': 'launching date must be input'
-        })
+        return jsonify({'error': 'launching date must be input'})
+    
     if 'ticket_price' not in data:
-        return jsonify({
-            'error': 'ticket price must be input'
-        })
+        return jsonify({'error': 'ticket price must be input'})
+    
+    if 'poster_path' not in data:
+        return jsonify({'error': 'poster path must be input'})
+    
+    poster_path = data['poster_path']
+    if not poster_path.startswith('poster/'):
+        poster_path = f'poster/{poster_path}'
+    
     mov = Movie(
-        name = data['name'],
-        launching = data['launching'],
-        category_id = data['category_id'],
-        ticket_price = data['ticket_price']
+        name=data['name'],
+        launching=data['launching'],
+        category_id=data['category_id'],
+        ticket_price=data['ticket_price'],
+        poster_path=poster_path  
     )
     db.session.add(mov)
     db.session.commit()
+    
     return jsonify({
         'id': mov.id,
         'name': mov.name,
         'launching': mov.launching.strftime('%Y-%m-%d'),
         'category_id': mov.category_id,
-        'ticket_price': mov.ticket_price
+        'ticket_price': mov.ticket_price,
+        'poster_path': mov.poster_path 
     })
 
+@app.route('/admin/add/movie')
+def add_movie_page():
+    if 'logged_in' not in session or session.get('role') != 'admin':
+        return render_template('unauthorized.html')
+    return render_template('admin_add_movie.html')
 
-@app.route('/update/movie/', methods=['PUT','DELETE'])
-@User.admin_required
+
+@app.route('/update/movie/', methods=['PUT', 'DELETE'])
 def update_movie():
     data = request.get_json()
     update_id = data.get('id')
     if not update_id:
-        return jsonify({
-            'error': 'id is required in the request'
-            }), 400
+        return jsonify({'error': 'movie id is required in the request'}), 400
+
     movie = Movie.query.get(update_id)
+    if not movie:
+        return jsonify({'error': 'Movie not found'}), 404
+
     if request.method == 'PUT':
-        if not movie:
-            return jsonify({
-                'error': 'Movie not found'
-                }), 404
-        if 'name' in data:
+        if 'name' in data :
             movie.name = data['name']
-        if 'launching' in data:
+        if 'launching' in data :
             movie.launching = data['launching']
-        if 'category_id' in data:
+        if 'category_id' in data :
             movie.category_id = data['category_id']
-        if 'ticket_price' in data:
+        if 'ticket_price' in data :
             movie.ticket_price = data['ticket_price']
-        db.session.commit() 
-        return jsonify({
-            'message': 'Movie updated successfully'
-            }), 200
+        if 'poster_path' in data :
+            movie.poster_path = f'poster/{data["poster_path"]}'
+
+        db.session.commit()
+        return jsonify({'message': 'Movie updated successfully'}), 200
+
     elif request.method == 'DELETE':
         db.session.delete(movie)
         db.session.commit()
-        return jsonify({
-            'message': 'Movie deleted successfully'
-            }), 200
+        return jsonify({'message': 'Movie deleted successfully'}), 200
 
+@app.route('/admin/update/movie')
+def update_movie_page():
+    if 'logged_in' not in session or session.get('role') != 'admin':
+        return render_template('unauthorized.html')
+    return render_template('admin_update_movie.html')
 
 @app.route('/add/schedule/', methods=['POST'])
-@User.admin_required
 def add_schedule():
     data = request.get_json()
 
@@ -134,9 +148,15 @@ def add_schedule():
         'theater_id': new_schedule.theater_id
     }), 201
 
+@app.route('/admin/add/schedule/', methods=['GET'])
+def admin_add_schedule():
+    if 'logged_in' not in session or session.get('role') != 'admin':
+        return render_template('unauthorized.html')
+    return render_template('admin_add_schedule.html')
+
 
 @app.route('/update/schedule/', methods=['PUT','DELETE'])
-@User.admin_required
+
 def update_schedule():
     data = request.get_json()
     update_id = data.get('id')
@@ -174,6 +194,12 @@ def update_schedule():
         return jsonify({
             'message': 'Schedule deleted successfully'
             }), 200
+    
+@app.route('/admin/update/schedule/', methods=['GET'])
+def admin_update_schedule():
+    if 'logged_in' not in session or session.get('role') != 'admin':
+        return render_template('unauthorized.html')
+    return render_template('admin_update_schedule.html')
 
 
 @app.route('/nowplaying', methods=['GET'])
@@ -198,9 +224,6 @@ def now_playing_page():
     return render_template('nowplaying.html', movies=movie_info)
 
 
-
-
-
 @app.route('/search/', methods=['GET'])
 def search_movie():
     query = request.args.get('query')
@@ -218,6 +241,7 @@ def search_movie():
             'name': movie.name,
             'launching': movie.launching.strftime('%Y-%m-%d'),
             'category': movie.info_category.name,
+            'poster_path': movie.poster_path
         }
         for movie in search_results
     ]
@@ -225,21 +249,16 @@ def search_movie():
 
 
 @app.route('/buy/ticket', methods=['POST'])
-@User.admin_or_user_required
-def buy(current_user):
+def buy():
     data = request.get_json()
     schedule_id = data.get('schedule_id')
 
-    if not schedule_id :
-        return jsonify({
-            'error': 'schedule_id must be provided'
-            }), 400
+    if not schedule_id:
+        return jsonify({'error': 'schedule_id must be provided'}), 400
 
     schedule = Schedule.query.get(schedule_id)
     if not schedule:
-        return jsonify({
-            'error': 'Schedule not found'
-            }), 404
+        return jsonify({'error': 'Schedule not found'}), 404
 
     launching_date = schedule.movie.launching
     max_launching_date = datetime.today().date() - timedelta(days=7)
@@ -247,23 +266,19 @@ def buy(current_user):
     if launching_date > max_launching_date:
         available_seat_count = schedule.info_theater.total_seat - Transaction.query.filter_by(schedule_id=schedule_id).filter_by(date=datetime.today().date()).count()
         if available_seat_count <= 0:
-            return jsonify({
-                'error': 'The schedule has full booking'
-                }), 400
+            return jsonify({'error': 'The schedule has full booking'}), 400
     else:
-        return jsonify({
-            'error': 'This movie is no longer active for booking'
-            }), 400
+        return jsonify({'error': 'This movie is no longer active for booking'}), 400
 
     ticket_price = schedule.movie.ticket_price
-    if current_user.balance < ticket_price:
-        return jsonify({
-            'error': 'Insufficient balance'
-            }), 400
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    if user.balance < ticket_price:
+        return jsonify({'error': 'Insufficient balance'}), 400
 
-    current_user.balance -= ticket_price
+    user.balance -= ticket_price
     new_transaction = Transaction(
-        user_id=current_user.id,
+        user_id=user.id,
         schedule_id=schedule_id,
         date=datetime.today().date()
     )
@@ -271,7 +286,55 @@ def buy(current_user):
     db.session.add(new_transaction)
     db.session.commit()
 
-    return jsonify({
-        'message': 'Ticket purchased successfully'
-        }), 200
+    return jsonify({'message': 'Ticket purchased successfully'}), 200
+
+    
+@app.route('/purchase_ticket', methods=['POST', 'GET'])
+def purchase_ticket():
+    data = request.get_json()
+    schedule_id = data.get('schedule_id')
+    quantity = data.get('quantity')
+    user_id = session.get('user_id')
+
+    if not schedule_id or not quantity:
+        return jsonify({'error': 'Invalid data'}), 400
+
+    if not user_id:
+        return jsonify({'error': 'User not logged in'}), 403
+
+    schedule = Schedule.query.get(schedule_id)
+    if not schedule:
+        return jsonify({'error': 'Schedule not found'}), 404
+
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    launching_date = schedule.movie.launching
+    max_launching_date = datetime.today().date() - timedelta(days=14)
+
+    if launching_date > max_launching_date:
+        booked_seat_count = db.session.query(db.func.sum(Transaction.quantity)).filter_by(schedule_id=schedule_id).scalar() or 0
+        available_seat_count = schedule.info_theater.total_seat - booked_seat_count
+
+        if available_seat_count < quantity:
+            return jsonify({'error': 'The schedule has full booking'}), 400
+    else:
+        return jsonify({'error': 'This movie is no longer active for booking'}), 400
+
+    total_price = schedule.movie.ticket_price * quantity
+    if user.balance < total_price:
+        return jsonify({'error': 'Insufficient balance'}), 400
+
+    user.balance -= total_price
+    new_transaction = Transaction(
+        user_id=user.id,
+        schedule_id=schedule_id,
+        quantity=quantity,
+        date=datetime.today().date()
+    )
+
+    db.session.add(new_transaction)
+    db.session.commit()
+    return jsonify({'success': True})
 

@@ -28,7 +28,6 @@ def topup():
 
 
 @app.route('/confirm/topup/', methods=['PUT'])
-@User.admin_required
 def confirm_topup():
     topup_id = request.get_json('id')
     if not topup_id:
@@ -59,4 +58,15 @@ def confirm_topup():
             'topup_id':topup.id,
             'error': 'Top-up request has already been confirmed'
             }), 400
+    
+@app.route('/unconfirmed/topups/', methods=['GET'])
+def get_unconfirmed_topups():
+    unconfirmed_topups = Topup.query.filter_by(is_confirmed=False).all()
+    topup_data = [{'id': topup.id, 'user_id': topup.user_id, 'amount': topup.amount} for topup in unconfirmed_topups]
+    return jsonify({'topups': topup_data}), 200
 
+@app.route('/admin/confirm/topup/', methods=['GET'])
+def admin_confirm_topup():
+    if 'logged_in' not in session or session.get('role') != 'admin':
+        return render_template('unauthorized.html')
+    return render_template('admin_confirm_topup.html')

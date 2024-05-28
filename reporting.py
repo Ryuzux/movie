@@ -35,3 +35,24 @@ def most_popular_movie():
             } for row in result
         ]
         return render_template('topmovie.html', top_movies=top_movies)
+
+
+@app.route('/admin/report', methods=['GET'])
+def admin_report():
+    if 'logged_in' not in session or session.get('role') != 'admin':
+        return render_template('unauthorized.html')
+    
+    transactions = Transaction.query.all()
+    schedules = Schedule.query.all()  # Ambil semua jadwal dari database
+    transaction_data = [
+        {
+            'id': transaction.id,
+            'user_id': transaction.user_id,
+            'schedule_id': transaction.schedule_id,
+            'date': transaction.date,
+            'quantity': transaction.quantity,
+            'schedule': Schedule.query.get(transaction.schedule_id)  # Dapatkan objek Schedule untuk setiap transaksi
+        }
+        for transaction in transactions
+    ]
+    return render_template('admin_report.html', transactions=transaction_data, schedules=schedules)

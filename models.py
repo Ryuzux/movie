@@ -5,6 +5,8 @@ from functools import wraps
 from werkzeug.security import check_password_hash
 from flask_session import Session
 from datetime import timedelta
+import os
+
 
 
 app = Flask(__name__)
@@ -18,6 +20,9 @@ app.config['SESSION_SQLALCHEMY_TABLE'] = 'sessions'
 app.config['SESSION_TYPE'] = 'sqlalchemy'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 
+UPLOAD_FOLDER = 'static/poster'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 Migrate = Migrate(app, db)
@@ -62,6 +67,7 @@ class Transaction(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'), nullable=False)
     date = db.Column(db.Date, default=0)
+    quantity = db.Column(db.Integer)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, index=True, nullable=False)
