@@ -23,7 +23,6 @@ UPLOAD_FOLDER = 'static/poster'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-seats = ['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5']
 
 Migrate = Migrate(app, db)
 Session(app)
@@ -48,10 +47,15 @@ class Theater(db.Model):
     total_seat = db.Column(db.Integer)
     schedules = db.relationship('Schedule', backref='info_theater', lazy='dynamic')
 
+class Seat(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    seat_number = db.Column(db.String)
+    seats = db.relationship('Transaction', backref='info_seat', lazy='dynamic')
+
 class Schedule(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     movie_id = db.Column(db.Integer, db.ForeignKey('movie.id'))
-    time = db.Column(db.Time, nullable=False) 
+    time = db.Column(db.Time, nullable=False)
     movie = db.relationship('Movie', back_populates='schedules')
     transactions = db.relationship('Transaction', backref='info_schedule', lazy='dynamic')
     theater_id = db.Column(db.Integer, db.ForeignKey('theater.id'))
@@ -68,6 +72,7 @@ class Transaction(db.Model):
     schedule_id = db.Column(db.Integer, db.ForeignKey('schedule.id'), nullable=False)
     date = db.Column(db.Date, default=0)
     quantity = db.Column(db.Integer)
+    seat_id = db.Column(db.Integer, db.ForeignKey('seat.id'))
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True, index=True, nullable=False)

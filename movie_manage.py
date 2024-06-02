@@ -35,6 +35,11 @@ def get_category():
     category_list = [{'id': category.id, 'name': category.name} for category in categories]
     return jsonify(category_list)
 
+@app.route('/upcoming')
+def upcoming():
+    upcoming_movies = Movie.query.filter(~Movie.schedules.any()).all()
+    return render_template('upcoming.html', movies=upcoming_movies)
+
 @app.route('/add/movie/', methods=['POST'])
 def add_movie():
     ensure_dir(app.config['UPLOAD_FOLDER']) 
@@ -360,3 +365,6 @@ def purchase_ticket():
     db.session.add(new_transaction)
     db.session.commit()
     return jsonify({'success': True})
+
+
+

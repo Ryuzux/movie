@@ -18,3 +18,6 @@ document.getElementById("settings").onclick = function() {
     window.location.href = "/update/user";
 };
 
+document.getElementById("upcoming").onclick = function() {
+    window.location.href = "/upcoming";
+};
