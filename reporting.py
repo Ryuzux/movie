@@ -23,7 +23,7 @@ def most_popular_movie():
         ORDER BY ticket DESC
         LIMIT 5;
         """)
-        
+
         result = con.execute(sql_query)
         top_movies = [
             {
@@ -39,20 +39,22 @@ def most_popular_movie():
 
 @app.route('/admin/report', methods=['GET'])
 def admin_report():
-    if 'logged_in' not in session or session.get('role') != 'admin':
+    if session.get('role') != 'admin':
         return render_template('unauthorized.html')
     
     transactions = Transaction.query.all()
-    schedules = Schedule.query.all()  # Ambil semua jadwal dari database
-    transaction_data = [
-        {
+    transaction_data = []
+
+    for transaction in transactions:
+        schedule = Schedule.query.get(transaction.schedule_id)
+        movie = Movie.query.get(schedule.movie_id) if schedule else None  # Dapatkan objek Movie melalui Schedule
+        transaction_data.append({
             'id': transaction.id,
-            'user_id': transaction.user_id,
-            'schedule_id': transaction.schedule_id,
+            'username': transaction.info_user.username,
+            'movie': movie.name,
             'date': transaction.date,
             'quantity': transaction.quantity,
-            'schedule': Schedule.query.get(transaction.schedule_id)  # Dapatkan objek Schedule untuk setiap transaksi
-        }
-        for transaction in transactions
-    ]
-    return render_template('admin_report.html', transactions=transaction_data, schedules=schedules)
+            'ticket_price': movie.ticket_price if movie else 0  # Dapatkan harga tiket dari Movie
+        })
+    
+    return render_template('admin_report.html', transactions=transaction_data)

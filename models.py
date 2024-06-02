@@ -5,7 +5,6 @@ from functools import wraps
 from werkzeug.security import check_password_hash
 from flask_session import Session
 from datetime import timedelta
-import os
 
 
 

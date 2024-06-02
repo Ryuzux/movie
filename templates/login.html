@@ -48,7 +48,7 @@
             <div class="card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
                 <div class="card-body">
                     <h3 class="card-title text-center mb-4">Login</h3>
-                    <form id="login-form" action="/login" method="POST">
+                    <form id="login-form">
                         <div class="form-group">
                             <label for="username">Username</label>
                             <input type="text" class="form-control" id="username" name="username" placeholder="Enter username" required>
@@ -57,9 +57,9 @@
                             <label for="password">Password</label>
                             <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block">Login</button>
+                        <button type="submit" class="btn btn-primary btn-block" id="login-button">Login</button>
                         <div class="text-center mt-3">
-                            <a>Forgot password?</a>
+                            <a href="#">Forgot password?</a>
                         </div>
                         <div class="text-center mt-3">
                             <p>Don't have an account? <a href="/register">Register</a></p>
@@ -73,10 +73,8 @@
     <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{{ url_for('static', filename='search.js') }}"></script>
-    <script src="{{ url_for('static', filename='main.js') }}"></script>
     <script src="https://kit.fontawesome.com/415c686b7f.js" crossorigin="anonymous"></script>
-    <script>
-        const sessionData = JSON.parse('{{ session|tojson|safe }}');
-    </script>
+    <script src="{{ url_for('static', filename='login.js') }}"></script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

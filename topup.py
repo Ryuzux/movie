@@ -67,6 +67,6 @@ def get_unconfirmed_topups():
 
 @app.route('/admin/confirm/topup/', methods=['GET'])
 def admin_confirm_topup():
-    if 'logged_in' not in session or session.get('role') != 'admin':
+    if session.get('role') != 'admin':
         return render_template('unauthorized.html')
     return render_template('admin_confirm_topup.html')

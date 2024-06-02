@@ -9,7 +9,7 @@
 
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='iconlogo.png') }}"></head>
 <body>
-    <section>
+
         <nav>
             <div class="cont">
                 <div class="btn-group">
@@ -44,18 +44,18 @@
             </div>
         </nav>
 
-
+        <section>
         <div class="container d-flex align-items-center justify-content-center min-vh-100">
             <div class="card p-4 shadow-lg" style="width: 100%; max-width: 400px;">
                 <div class="card-body">
                     <h3 class="card-title text-center mb-4">Register</h3>
                     <form id="register-form">
                         <div class="form-group pt-5">
-                            
+                            <div>Username</div>
                             <input type="text" class="form-control" id="user" name="username" placeholder="Enter username">
                         </div>
                         <div class="form-group pb-5">
-                            
+                            <div>Password</div>
                             <input type="password" class="form-control" id="pass" name="password" placeholder="Enter password">
                         </div>
                         <button type="submit" class="btn btn-primary btn-block">Register</button>
@@ -73,40 +73,8 @@
     <script src="{{ url_for('static', filename='search.js') }}"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
     <script src="https://kit.fontawesome.com/415c686b7f.js" crossorigin="anonymous"></script>
-    <script>
-        const sessionData = JSON.parse('{{ session|tojson|safe }}');
-    </script>
-    <script>
-    document.getElementById('register-form').addEventListener('submit', function(event) {
-        event.preventDefault();
+    <script src="{{ url_for('static', filename='session.js') }}"></script>
+    <script src="{{ url_for('static', filename='register.js') }}"></script>
 
-        const username = document.getElementById('user').value.trim();
-        const password = document.getElementById('pass').value.trim();
-
-        const formData = new FormData();
-        formData.append('username', username);
-        formData.append('password', password);
-
-        fetch('/register/', {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            return response.json().then(data => ({
-                status: response.status,
-                body: data
-            }));
-        })
-        .then(({ status, body }) => {
-            if (status !== 200) {
-                alert(body.error || body.message);
-            } else {
-                alert('Registered successfully');
-                window.location.href = '/login';
-            }
-        })
-        .catch(error => console.error('Error:', error));
-    });
-    </script>
 </body>
 </html>

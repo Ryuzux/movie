@@ -1,6 +1,18 @@
 from flask import request, jsonify,render_template,url_for,redirect,session
 from models import *
 from datetime import datetime, timedelta,date
+from werkzeug.utils import secure_filename
+import os
+app.config['UPLOAD_FOLDER'] = 'D:\python\latihan\mini_project\static\poster'
+
+def ensure_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+
 
 @app.route('/movie/<int:movie_id>')
 def movie_detail(movie_id):
@@ -11,40 +23,56 @@ def movie_detail(movie_id):
 
     return render_template('movie_detail.html', movie=movie, schedules=schedules)
 
+@app.route('/movies', methods=['GET'])
+def get_movies():
+    movies = Movie.query.all()
+    movies_list = [{'id': movie.id, 'name': movie.name} for movie in movies]
+    return jsonify(movies_list)
+
+@app.route('/category', methods=['GET'])
+def get_category():
+    categories = Category.query.all()
+    category_list = [{'id': category.id, 'name': category.name} for category in categories]
+    return jsonify(category_list)
+
 @app.route('/add/movie/', methods=['POST'])
 def add_movie():
-    data = request.get_json()
-    
-    if 'name' not in data:
-        return jsonify({'error': 'name movie must be input'})
-    
-    existing_movie = Movie.query.filter_by(name=data['name']).first()
+    ensure_dir(app.config['UPLOAD_FOLDER']) 
+
+    if 'name' not in request.form:
+        return jsonify({'error': 'name movie must be input'}), 400
+
+    name = request.form['name']
+    launching = request.form['launching']
+    category_id = request.form['category_id']
+    ticket_price = request.form['ticket_price']
+
+    existing_movie = Movie.query.filter_by(name=name).first()
     if existing_movie:
-        return jsonify({'error': "the movie currently airing"})
+        return jsonify({'error': "the movie currently airing"}), 400
+
+    if 'poster' not in request.files:
+        return jsonify({'error': 'poster file must be input'}), 400
     
-    if 'launching' not in data:
-        return jsonify({'error': 'launching date must be input'})
+    poster = request.files['poster']
+    if poster.filename == '':
+        return jsonify({'error': 'no selected file'}), 400
     
-    if 'ticket_price' not in data:
-        return jsonify({'error': 'ticket price must be input'})
-    
-    if 'poster_path' not in data:
-        return jsonify({'error': 'poster path must be input'})
-    
-    poster_path = data['poster_path']
-    if not poster_path.startswith('poster/'):
-        poster_path = f'poster/{poster_path}'
+    if poster and allowed_file(poster.filename):
+        filename = secure_filename(poster.filename)
+        poster.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        poster_path = os.path.join('poster/', filename)  
     
     mov = Movie(
-        name=data['name'],
-        launching=data['launching'],
-        category_id=data['category_id'],
-        ticket_price=data['ticket_price'],
-        poster_path=poster_path  
+        name=name,
+        launching=datetime.strptime(launching, '%Y-%m-%d'),
+        category_id=category_id,
+        ticket_price=ticket_price,
+        poster_path=poster_path
     )
     db.session.add(mov)
     db.session.commit()
-    
+
     return jsonify({
         'id': mov.id,
         'name': mov.name,
@@ -52,37 +80,47 @@ def add_movie():
         'category_id': mov.category_id,
         'ticket_price': mov.ticket_price,
         'poster_path': mov.poster_path 
-    })
+    }), 201
+
+
 
 @app.route('/admin/add/movie')
 def add_movie_page():
-    if 'logged_in' not in session or session.get('role') != 'admin':
-        return render_template('unauthorized.html')
+    if  session.get('role') != 'admin':
+        return render_template('unauthorized.html'), 404
     return render_template('admin_add_movie.html')
+
 
 
 @app.route('/update/movie/', methods=['PUT', 'DELETE'])
 def update_movie():
-    data = request.get_json()
+    ensure_dir(app.config['UPLOAD_FOLDER']) 
+
+    data = request.form.to_dict() 
     update_id = data.get('id')
     if not update_id:
-        return jsonify({'error': 'movie id is required in the request'}), 400
+        return jsonify({'error': 'Movie id is required in the request'}), 400
 
     movie = Movie.query.get(update_id)
     if not movie:
         return jsonify({'error': 'Movie not found'}), 404
 
     if request.method == 'PUT':
-        if 'name' in data :
+        if 'name' in data:
             movie.name = data['name']
-        if 'launching' in data :
+        if 'launching' in data:
             movie.launching = data['launching']
-        if 'category_id' in data :
+        if 'category_id' in data:
             movie.category_id = data['category_id']
-        if 'ticket_price' in data :
+        if 'ticket_price' in data:
             movie.ticket_price = data['ticket_price']
-        if 'poster_path' in data :
-            movie.poster_path = f'poster/{data["poster_path"]}'
+
+        if 'poster' in request.files:
+            poster = request.files['poster']
+            if poster and allowed_file(poster.filename):
+                filename = secure_filename(poster.filename)
+                poster.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                movie.poster_path = os.path.join('poster/', filename)
 
         db.session.commit()
         return jsonify({'message': 'Movie updated successfully'}), 200
@@ -94,9 +132,11 @@ def update_movie():
 
 @app.route('/admin/update/movie')
 def update_movie_page():
-    if 'logged_in' not in session or session.get('role') != 'admin':
-        return render_template('unauthorized.html')
+    if session.get('role') != 'admin':
+        return render_template('unauthorized.html'), 404
     return render_template('admin_update_movie.html')
+
+
 
 @app.route('/add/schedule/', methods=['POST'])
 def add_schedule():
@@ -150,55 +190,76 @@ def add_schedule():
 
 @app.route('/admin/add/schedule/', methods=['GET'])
 def admin_add_schedule():
-    if 'logged_in' not in session or session.get('role') != 'admin':
+    if session.get('role') != 'admin':
         return render_template('unauthorized.html')
     return render_template('admin_add_schedule.html')
 
 
-@app.route('/update/schedule/', methods=['PUT','DELETE'])
+@app.route('/movie/schedule/<int:movie_id>')
+def get_movie_schedule(movie_id):
+    schedules = Schedule.query.filter_by(movie_id=movie_id).all()
+    # Get unique theater ids
+    theater_ids = set(schedule.theater_id for schedule in schedules)
+    # Prepare response data
+    response_data = {}
+    for theater_id in theater_ids:
+        response_data[str(theater_id)] = [{
+            'id': schedule.id,
+            'time': schedule.time.strftime('%H:%M'), 
+        } for schedule in schedules if schedule.theater_id == theater_id]
+    return jsonify(response_data)
 
+
+@app.route('/update/schedule/', methods=['PUT', 'DELETE'])
 def update_schedule():
     data = request.get_json()
-    update_id = data.get('id')
-    if not update_id:
+    schedule_id = data.get('schedule_id')
+    if not schedule_id:
         return jsonify({
             'error': 'id is required in the request'
-        })
-    sch = Schedule.query.get(update_id)
+        }), 400  
+    sch = Schedule.query.get(schedule_id)
     if not sch:
         return jsonify({
             'error': 'Schedule not found'
-            }), 404
-    if request.method == 'PUT':
-        if 'id' in data:
-            sch.id = data['id']
-        if 'movie_id' in data:
-            sch.movie_id = data['movie_id']
-        if 'time' in data:
-            sch.time = data['time']
-        if 'theater_id' in data:
-            sch.theater_id = data['theater_id']
+        }), 404
 
+    if request.method == 'PUT':
+        new_time = data.get('time')
+        if new_time:
+            existing_schedule = Schedule.query.filter_by(
+                theater_id=sch.theater_id, time=new_time
+            ).first()
+            if existing_schedule and existing_schedule.id != schedule_id:
+                return jsonify({
+                    'error': 'Another schedule exists in this theater at the same time.'
+                }), 400
+
+            sch.time = new_time
         db.session.commit()
+
         return jsonify({
+            'message': 'Schedule updated successfully',
             'id': sch.id,
             'movie_id': sch.movie_id,
             'theater_id': sch.theater_id,
             'name': sch.movie.name,
             'time': sch.time.strftime('%H:%M')
         }), 200
-    
+
     elif request.method == 'DELETE':
         db.session.delete(sch)
         db.session.commit()
+
         return jsonify({
             'message': 'Schedule deleted successfully'
-            }), 200
+        }), 200
+
     
 @app.route('/admin/update/schedule/', methods=['GET'])
 def admin_update_schedule():
-    if 'logged_in' not in session or session.get('role') != 'admin':
-        return render_template('unauthorized.html')
+    if session.get('role') != 'admin':
+        return render_template('unauthorized.html'), 404
     return render_template('admin_update_schedule.html')
 
 
@@ -314,13 +375,18 @@ def purchase_ticket():
     max_launching_date = datetime.today().date() - timedelta(days=14)
 
     if launching_date > max_launching_date:
-        booked_seat_count = db.session.query(db.func.sum(Transaction.quantity)).filter_by(schedule_id=schedule_id).scalar() or 0
-        available_seat_count = schedule.info_theater.total_seat - booked_seat_count
+        max_seat_capacity = schedule.info_theater.total_seat
 
-        if available_seat_count < quantity:
-            return jsonify({'error': 'The schedule has full booking'}), 400
+        if quantity > max_seat_capacity:
+            return jsonify({'error': 'The number of requested seats exceeds the maximum capacity of the theater'}), 400
     else:
         return jsonify({'error': 'This movie is no longer active for booking'}), 400
+
+    booked_seat_count = db.session.query(db.func.sum(Transaction.quantity)).filter_by(schedule_id=schedule_id).filter_by(date=datetime.today().date()).scalar() or 0
+    available_seat_count = schedule.info_theater.total_seat - booked_seat_count
+
+    if available_seat_count < quantity:
+        return jsonify({'error': 'The schedule does not have enough available seats'}), 400
 
     total_price = schedule.movie.ticket_price * quantity
     if user.balance < total_price:
@@ -337,4 +403,3 @@ def purchase_ticket():
     db.session.add(new_transaction)
     db.session.commit()
     return jsonify({'success': True})
-

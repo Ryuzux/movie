@@ -37,7 +37,7 @@ def add_user():
 @app.route('/update/user', methods=['PUT', 'GET'])
 def update_user():
     if 'username' not in session:
-        return redirect(url_for('login'))  # Redirect to login if the user is not logged in
+        return redirect(url_for('login'))
 
     if request.method == 'GET':
         return render_template('update.html')
@@ -53,7 +53,7 @@ def update_user():
         
         if 'new_username' in data:
             user.username = data['new_username']
-            session['username'] = data['new_username']  # Update session username if changed
+            session['username'] = data['new_username']  
         
         if 'new_password' in data:
             user.password = generate_password_hash(data['new_password'], method='pbkdf2:sha256', salt_length=16)
@@ -63,7 +63,8 @@ def update_user():
 
 @app.route('/user')
 def user():
-    if 'logged_in' in session and session['logged_in']:
+    if 'username' in session:
+
         current_user = User.query.filter_by(username=session['username']).first()
         if current_user:
             username = current_user.username

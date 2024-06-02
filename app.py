@@ -3,51 +3,58 @@ from user import *
 from movie_manage import *
 from reporting import *
 from topup import *
-from flask import render_template,redirect, url_for
+from flask import render_template,redirect, url_for,session,request
 
-from flask import request, jsonify, session, render_template
 
-@app.route('/login', methods=['GET', 'POST'])
+@app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    username = request.form.get('username')
+    password = request.form.get('password')
 
-        # Lakukan proses autentikasi pengguna, misalnya dari database
-        user = User.query.filter_by(username=username).first()
-        if user and check_password_hash(user.password, password):
-            # Autentikasi berhasil, simpan informasi pengguna dalam sesi
-            session['logged_in'] = True
-            session['username'] = user.username
-            session['user_id'] = user.id
-            session['role'] = user.role
-
-            # Pengalihan berdasarkan peran pengguna
-            if user.role == 'admin':
-                return redirect('/admin')
-            else:
-                return redirect('/home')
+    user = User.query.filter_by(username=username).first()
+    if user and check_password_hash(user.password, password):
+        session['username'] = user.username
+        session['user_id'] = user.id
+        session['role'] = user.role
+        if user.role == 'admin':
+            return jsonify({'success': True, 'redirect_url': '/admin'})
         else:
-            # Autentikasi gagal, kembalikan pesan kesalahan
-            return render_template('login.html', error='Invalid username or password')
+            return jsonify({'success': True, 'redirect_url': '/home'})
+    else:
+        return jsonify({'success': False, 'error': 'Invalid username or password'}), 401
 
+    
+@app.route('/login', methods=['GET'])
+def show_login_page():
     return render_template('login.html')
+
+@app.route('/check_session', methods=['GET'])
+def check_session():
+    if 'username' in session:
+        return jsonify({'logged_in': True, 'role': session['role']})
+    else:
+        return jsonify({'logged_in': False})
+    
+@app.route('/logout', methods=['POST'])
+def logout():
+    session.clear()
+    return jsonify({'succes': True})
 
 @app.route('/admin')
 def admin_dashboard():
-    if 'logged_in' not in session or session.get('role') != 'admin':
+    if session.get('role') != 'admin':
         return redirect('/login')
     movies = Movie.query.order_by(Movie.id).all()
     return render_template('admin_dashboard.html', movies=movies)
 
-@app.route('/logout', methods=['POST'])
-def logout():
-    session.pop('logged_in', None) 
-    return redirect(url_for('home'))
-
 
 @app.route('/home')
 def home():
+    movies = Movie.query.all() 
+    return render_template('home.html', movies=movies)
+
+@app.route('/')
+def hom():
     movies = Movie.query.all() 
     return render_template('home.html', movies=movies)
 

@@ -22,6 +22,7 @@
                     <button id="nowplaying" class="btn">Now Playing</button>
                     <button id="upcoming" class="btn">Up Coming</button>
                 </div>
+    
                 <div class="btn-group">
                     <form class="form-inline" action="/search" method="GET" id="search-form" style="padding-top: 10px;">
                         <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" id="search-input" name="query">
@@ -29,6 +30,7 @@
                     <button class="btn" type="submit" form="search-form">
                         <i class="fas fa-search fa-xl"></i>
                     </button>
+    
                     <div class="dropdown btn-group" id="profile-container">
                         <button class="btn btn-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
                             <i class="fa-solid fa-user fa-xl"></i>
@@ -44,26 +46,26 @@
                 </div>
             </div>
         </nav>
-        
-        <!-- Top Up Modal -->
-        <div class="modal fade" id="topupModal" tabindex="-1" aria-labelledby="topupModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="topupModalLabel">Top Up Moviekita</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="topup-form">
-                            <div class="mb-2">
-                                <input type="number" class="form-control" id="topup-amount" name="amount" required>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Submit</button>
-                        </form>
+            <!-- Modal -->
+            <div class="modal fade" id="topupModal" tabindex="-1" aria-labelledby="topupModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="topupModalLabel">Top Up Moviekita</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="topup-form">
+                                <div class="mb-2">
+                                    
+                                    <input type="number" class="form-control" id="topup-amount" name="amount" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Submit</button>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
 
         <!-- Movie Details Section -->
         <div class="container">
@@ -130,59 +132,9 @@
     <script src="{{ url_for('static', filename='search.js') }}"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
     <script src="{{ url_for('static', filename='topup.js') }}"></script>
-
-    <!-- Session Data -->
-    <script>
-        const sessionData = JSON.parse('{{ session|tojson|safe }}');
-    </script>
+    <script src="{{ url_for('static', filename='session.js') }}"></script>
+    <script src="{{ url_for('static', filename='movie_detail.js') }}"></script>
     
-    <!-- Purchase Ticket Script -->
-    <script>
-        const beliTiketButtons = document.querySelectorAll('.beli-tiket-btn');
-        beliTiketButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const scheduleId = button.dataset.scheduleId;
-                document.getElementById('purchase-form').setAttribute('data-schedule-id', scheduleId);
-                $('#purchaseModal').modal('show');
-            });
-        });
 
-        // Handle ticket purchase form submission
-        document.getElementById('purchase-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const scheduleId = this.dataset.scheduleId;
-            const quantity = document.getElementById('quantity').value;
-            fetch('/purchase_ticket', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ schedule_id: scheduleId, quantity: parseInt(quantity) })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'Pembelian Berhasil!',
-                        text: 'Tiket Anda berhasil dibeli.'
-                    });
-                    $('#purchaseModal').modal('hide');
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: data.error
-                    });
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Terjadi kesalahan saat memproses pembelian tiket.'
-                });
-            });
-        });
-    </script>
-</body>
+    </body>
 </html>

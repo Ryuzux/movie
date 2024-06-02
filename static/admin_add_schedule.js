@@ -1,9 +1,45 @@
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/movies')
+        .then(response => response.json())
+        .then(movies => {
+            const movieSelect = document.getElementById('movie_id');
+            movies.forEach(movie => {
+                const option = document.createElement('option');
+                option.value = movie.id;
+                option.text = movie.name;
+                movieSelect.appendChild(option);
+            });
+        });
+});
+
 async function addSchedule(event) {
     event.preventDefault();
     
-    const movie_id = document.getElementById('movie_id').value;
-    const time = document.getElementById('time').value;
-    const theater_id = document.getElementById('theater_id').value;
+    const movieId = document.getElementById('movie_id').value;
+    const selectedTimeInput = document.querySelector('input[name="time"]:checked');
+    const time = selectedTimeInput ? selectedTimeInput.value : null;
+    const selectedTheaterInput = document.querySelector('input[name="theater_id"]:checked');
+    const theaterId = selectedTheaterInput ? selectedTheaterInput.value : null;
+    
+    if (!time) {
+        Swal.fire({
+            title: 'Error!',
+            text: 'Please select a time.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
+    
+    if (!theaterId) {
+        Swal.fire({
+            title: 'Error!',
+            text: 'Please select a theater.',
+            icon: 'error',
+            confirmButtonText: 'OK'
+        });
+        return;
+    }
     
     const response = await fetch('/add/schedule/', {
         method: 'POST',
@@ -11,9 +47,9 @@ async function addSchedule(event) {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            movie_id,
-            time,
-            theater_id
+            movie_id: movieId,
+            time: time,
+            theater_id: theaterId
         })
     });
     

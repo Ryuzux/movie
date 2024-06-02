@@ -102,8 +102,7 @@
     <script src="https://kit.fontawesome.com/415c686b7f.js" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
     <script src="{{ url_for('static', filename='search.js') }}"></script>
-    <script>
-        const sessionData = JSON.parse('{{ session|tojson|safe }}');
-    </script>
+    <script src="{{ url_for('static', filename='session.js') }}"></script>
+
 </body>
 </html>

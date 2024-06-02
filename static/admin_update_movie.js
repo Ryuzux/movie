@@ -1,29 +1,61 @@
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/movies')
+        .then(response => response.json())
+        .then(movies => {
+            const movieSelect = document.getElementById('movie_id');
+            movies.forEach(movie => {
+                const option = document.createElement('option');
+                option.value = movie.id;
+                option.text = movie.name;
+                movieSelect.appendChild(option);
+            });
+        });
+
+    fetch('/category')
+        .then(response => response.json())
+        .then(categories => {
+            const categorySelect = document.getElementById('category_id');
+            categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.text = category.name;
+                categorySelect.appendChild(option);
+            });
+        });
+});
+
 document.getElementById("updateForm").addEventListener("submit", function(event) {
     event.preventDefault();
     updateMovie();
 });
 
 function updateMovie() {
-    var movieId = document.getElementById("movieid").value;
-    var movieName = document.getElementById("name").value;
+    var movieId = document.getElementById("movie_id").value;
     var movieLaunching = document.getElementById("launching").value;
     var movieCategory = document.getElementById("category_id").value;
     var movieTicketPrice = document.getElementById("ticket_price").value;
-    var moviePosterPath = document.getElementById("poster_path").value;
+    var moviePoster = document.getElementById("poster_path").files[0];
 
-    var updateData = { id: movieId };
-    if (movieName) updateData.name = movieName;
-    if (movieLaunching) updateData.launching = movieLaunching;
-    if (movieCategory) updateData.category_id = movieCategory;
-    if (movieTicketPrice) updateData.ticket_price = movieTicketPrice;
-    if (moviePosterPath) updateData.poster_path = moviePosterPath;
+    if (!movieLaunching && !movieCategory && !movieTicketPrice && !moviePoster) {
+        Swal.fire("At least one field must be filled out to update the movie");
+        return;
+    }
+
+    if (!movieId) {
+        Swal.fire("Movie ID is required");
+        return;
+    }
+
+    var formData = new FormData();
+    formData.append('id', movieId);
+    if (movieLaunching) formData.append('launching', movieLaunching);
+    if (movieCategory) formData.append('category_id', movieCategory);
+    if (movieTicketPrice) formData.append('ticket_price', movieTicketPrice);
+    if (moviePoster) formData.append('poster', moviePoster);
 
     fetch('/update/movie/', {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(updateData)
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
@@ -33,25 +65,8 @@ function updateMovie() {
             Swal.fire(data.error);
         }
     })
-    .catch(error => console.error('Error:', error));
-}
-
-function deleteMovie() {
-    var movieId = document.getElementById("movieid").value;
-    fetch('/update/movie/', {
-        method: 'DELETE',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ id: movieId })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message) {
-            Swal.fire(data.message);
-        } else if (data.error) {
-            Swal.fire(data.error);
-        }
-    })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire("An error occurred");
+    });
 }

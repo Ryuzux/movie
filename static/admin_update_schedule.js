@@ -1,15 +1,64 @@
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/movies')
+        .then(response => response.json())
+        .then(movies => {
+            const movieSelect = document.getElementById('movie_id');
+            movies.forEach(movie => {
+                const option = document.createElement('option');
+                option.value = movie.id;
+                option.text = movie.name;
+                movieSelect.appendChild(option);
+            });
+        });
+});
 
+document.getElementById('movie_id').addEventListener('change', function() {
+    var selectedMovieId = this.value;
+    fetch(`/movie/schedule/${selectedMovieId}`)
+        .then(response => response.json())
+        .then(data => {
+            const scheduleOptions = document.getElementById('schedule_options');
+            scheduleOptions.innerHTML = ''; // Clear existing options
+            Object.keys(data).forEach(theaterId => {
+                const theaterSchedules = data[theaterId];
+                const theaterGroup = document.createElement('div');
+                theaterGroup.classList.add('theater-group');
+                const theaterHeader = document.createElement('h4');
+                theaterHeader.textContent = `Theater ${theaterId}`;
+                theaterGroup.appendChild(theaterHeader);
+                theaterSchedules.forEach(schedule => {
+                    const radioOption = document.createElement('input');
+                    radioOption.type = 'radio';
+                    radioOption.name = 'schedule_id';
+                    radioOption.value = schedule.id;
+                    radioOption.id = `schedule_${schedule.id}`;
 
-function updateSchedule() {
-    var scheduleId = document.getElementById("schedule_id").value;
-    var movieId = document.getElementById("movie_id").value;
-    var time = document.getElementById("time").value;
-    var theaterId = document.getElementById("theater_id").value;
+                    const label = document.createElement('label');
+                    label.htmlFor = `schedule_${schedule.id}`;
+                    label.textContent = `Time: ${schedule.time}`;
 
-    var updateData = { id: scheduleId };
-    if (movieId) updateData.movie_id = movieId;
+                    // Add radio button and label to theater group
+                    theaterGroup.appendChild(radioOption);
+                    theaterGroup.appendChild(label);
+
+                    // Add event listener to update selected time when radio button is clicked
+                    radioOption.addEventListener('change', function() {
+                        document.getElementById('selected_time').value = schedule.time;
+                    });
+                });
+                scheduleOptions.appendChild(theaterGroup);
+            });
+        })
+        .catch(error => console.error('Error fetching movie schedule:', error));
+});
+
+function updateSchedule(event) {
+    event.preventDefault();
+    var scheduleId = document.querySelector('input[name="schedule_id"]:checked').value;
+    var time = document.getElementById("selected_time").value;
+
+    var updateData = { schedule_id: scheduleId }; // Pastikan schedule_id disertakan dalam data
     if (time) updateData.time = time;
-    if (theaterId) updateData.theater_id = theaterId;
 
     fetch('/update/schedule/', {
         method: 'PUT',
@@ -39,8 +88,10 @@ function updateSchedule() {
     .catch(error => console.error('Error:', error));
 }
 
+
+
 function deleteSchedule() {
-    var scheduleId = document.getElementById("schedule_id").value;
+    var scheduleId = document.querySelector('input[name="schedule_id"]:checked').value;
     fetch('/update/schedule/', {
         method: 'DELETE',
         headers: {

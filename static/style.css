@@ -101,20 +101,20 @@ np{
 }
 
 .movie-card {
-    border: 2px solid #ddd; /* Menambahkan border abu-abu dengan ketebalan 2px */
-    border-radius: 15px; /* Membuat sudut border melengkung */
-    padding: 10px; /* Menambahkan padding di dalam border */
-    transition: transform 0.3s ease; /* Menambahkan efek transisi pada hover */
-    background-color: rgb(0, 0, 0); /* Menambahkan latar belakang hitam */
+    border: 2px solid #ddd;
+    border-radius: 15px;
+    padding: 10px; 
+    transition: transform 0.3s ease; 
+    background-color: rgb(0, 0, 0); 
     margin-bottom: 20px;
     height: 470px;
     color: white;
-    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5); /* Menambahkan shadow inset */
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5); 
     
 }
 
 .movie-card:hover {
-    transform: scale(1.02); /* Memperbesar kontainer sedikit saat dihover */
+    transform: scale(1.02); 
     color: yellow;
 }
 
@@ -123,13 +123,13 @@ np{
     height: 350px;
     display: flex;
     justify-content: center ;
-    border-radius: 5px; /* Membuat sudut gambar melengkung */
+    border-radius: 5px; 
     box-shadow: inset 20 20 10px rgba(0, 0, 0, 0.5)
     
 }
 
 .movie-details {
-    text-align: center; /* Mengatur teks agar berada di tengah */
+    text-align: center; 
 }
 
 
@@ -138,7 +138,7 @@ np{
     margin-left: 15px;
 }
 
-/* On smaller screens, decrease text size */
+
 @media only screen and (max-width: 300px) {
   .text { font-size: 7px; }
 }

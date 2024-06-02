@@ -15,7 +15,7 @@
             <div class="cont">
                 <div class="btn-group">
                     <div class="logo">
-                        <button class="btn"><img src="{{ url_for('static', filename='logo3.png') }}" id="home" class="logo"></button>
+                        <button class="btn"><img src="{{ url_for('static', filename='logo3.png') }}" id="home-admin" class="logo"></button>
                     </div>
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                         Movie Manager
@@ -77,17 +77,17 @@
                     <div class="card p-4 shadow-lg">
                         <div class="card-body">
                             <h3 class="card-title text-center mb-4">Add a New Movie</h3>
-                            <form id="addForm" onsubmit="addMovie(event)">
-                                <div class="mb-3">
-                                    <label for="name" class="form-label">Movie Name:</label>
+                            <form id="addForm" enctype="multipart/form-data">
+                                <div class="form-group">
+                                    <label for="name">Movie Name</label>
                                     <input type="text" class="form-control" id="name" name="name" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="launching" class="form-label">Launching Date:</label>
+                                <div class="form-group">
+                                    <label for="launching">Launching Date</label>
                                     <input type="date" class="form-control" id="launching" name="launching" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="category_id" class="form-label">Category:</label>
+                                <div class="form-group">
+                                    <label for="category_id">Category ID</label>
                                     <select class="form-control" id="category_id" name="category_id" required>
                                         <option value="">Select Category</option>
                                         <option value="1">horror</option>
@@ -96,19 +96,20 @@
                                         <option value="4">thriller</option>
                                         <option value="5">adventure</option>
                                         <option value="6">anime</option>
-                                        <!-- Add more categories as needed -->
                                     </select>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="ticket_price" class="form-label">Ticket Price:</label>
+                                <div class="form-group">
+                                    <label for="ticket_price">Ticket Price</label>
                                     <input type="number" class="form-control" id="ticket_price" name="ticket_price" required>
                                 </div>
-                                <div class="mb-3">
-                                    <label for="poster_path" class="form-label">Poster Path:</label>
-                                    <input type="text" class="form-control" id="poster_path" name="poster_path" required>
+                                <div class="form-group">
+                                    <label for="poster">Poster</label>
+                                    <input type="file" class="form-control" id="poster" name="poster" accept="image/*" required>
                                 </div>
-                                <button type="submit" class="btn btn-primary btn-block">Add Movie</button>
+                                <button type="submit" class="btn btn-primary">Add Movie</button>
                             </form>
+                            
+                            
                         </div>
                     </div>
                 </div>
@@ -118,54 +119,12 @@
 
     <!-- Bootstrap JS and dependencies -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='admin_add_movie.js') }}"></script>
     <script src="https://kit.fontawesome.com/415c686b7f.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{{ url_for('static', filename='session.js') }}"></script>
     <script src="{{ url_for('static', filename='admin_main.js') }}"></script>
-    <script>
-        async function addMovie(event) {
-            event.preventDefault();
-            
-            const name = document.getElementById('name').value;
-            const launching = document.getElementById('launching').value;
-            const category_id = document.getElementById('category_id').value;
-            const ticket_price = document.getElementById('ticket_price').value;
-            const poster_path = document.getElementById('poster_path').value; 
-            
-            const response = await fetch('/add/movie/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name,
-                    launching,
-                    category_id,
-                    ticket_price,
-                    poster_path 
-                })
-            });
-            
-            const result = await response.json();
-            if (response.ok) {
-                Swal.fire({
-                    title: 'Success!',
-                    text: `Movie added successfully with ID: ${result.id}`,
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                });
-            } else {
-                Swal.fire({
-                    title: 'Error',
-                    text: result.error,
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            }
-        }
-    </script>
-     <script>
-        const sessionData = JSON.parse('{{ session|tojson|safe }}');
-    </script>
+    <script src="{{ url_for('static', filename='admin_add_movie.js') }}"></script>
+
+
 </body>
 </html>
