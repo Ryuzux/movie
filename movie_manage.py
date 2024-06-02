@@ -175,7 +175,6 @@ def add_schedule():
         time=data['time'],
         theater_id=data['theater_id']
     )
-
     db.session.add(new_schedule)
     db.session.commit()
 
@@ -188,6 +187,7 @@ def add_schedule():
         'theater_id': new_schedule.theater_id
     }), 201
 
+
 @app.route('/admin/add/schedule/', methods=['GET'])
 def admin_add_schedule():
     if session.get('role') != 'admin':
@@ -198,9 +198,7 @@ def admin_add_schedule():
 @app.route('/movie/schedule/<int:movie_id>')
 def get_movie_schedule(movie_id):
     schedules = Schedule.query.filter_by(movie_id=movie_id).all()
-    # Get unique theater ids
     theater_ids = set(schedule.theater_id for schedule in schedules)
-    # Prepare response data
     response_data = {}
     for theater_id in theater_ids:
         response_data[str(theater_id)] = [{
@@ -307,47 +305,6 @@ def search_movie():
         for movie in search_results
     ]
     return render_template('search.html', movie_info=movie_info, query=query)
-
-
-@app.route('/buy/ticket', methods=['POST'])
-def buy():
-    data = request.get_json()
-    schedule_id = data.get('schedule_id')
-
-    if not schedule_id:
-        return jsonify({'error': 'schedule_id must be provided'}), 400
-
-    schedule = Schedule.query.get(schedule_id)
-    if not schedule:
-        return jsonify({'error': 'Schedule not found'}), 404
-
-    launching_date = schedule.movie.launching
-    max_launching_date = datetime.today().date() - timedelta(days=7)
-
-    if launching_date > max_launching_date:
-        available_seat_count = schedule.info_theater.total_seat - Transaction.query.filter_by(schedule_id=schedule_id).filter_by(date=datetime.today().date()).count()
-        if available_seat_count <= 0:
-            return jsonify({'error': 'The schedule has full booking'}), 400
-    else:
-        return jsonify({'error': 'This movie is no longer active for booking'}), 400
-
-    ticket_price = schedule.movie.ticket_price
-    user_id = session.get('user_id')
-    user = User.query.get(user_id)
-    if user.balance < ticket_price:
-        return jsonify({'error': 'Insufficient balance'}), 400
-
-    user.balance -= ticket_price
-    new_transaction = Transaction(
-        user_id=user.id,
-        schedule_id=schedule_id,
-        date=datetime.today().date()
-    )
-
-    db.session.add(new_transaction)
-    db.session.commit()
-
-    return jsonify({'message': 'Ticket purchased successfully'}), 200
 
     
 @app.route('/purchase_ticket', methods=['POST', 'GET'])

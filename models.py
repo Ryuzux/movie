@@ -23,6 +23,7 @@ UPLOAD_FOLDER = 'static/poster'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+seats = ['A1','A2','A3','A4','A5','B1','B2','B3','B4','B5']
 
 Migrate = Migrate(app, db)
 Session(app)
