@@ -26,13 +26,13 @@ np{
 }
 
 .carousel-inner{
-    width: 1400px; /* Lebar baru */
-    height: 600px; /* Tinggi baru */
+    width: 1400px; 
+    height: 600px; 
     overflow: hidden;
     margin: auto;
     border-radius: 20px;
     box-shadow: #021f42;
-    box-shadow: 50px 0px 30px rgba(0, 0, 0, 0.5); 
+    box-shadow: 0px 20px 30px 20px rgba(0, 0, 0, 0.5); 
 }
 
 .carousel-inner img {
@@ -46,7 +46,7 @@ np{
     }
 
     .carousel-inner img {
-        height: 200px; /* Adjust for smaller screens */
+        height: 200px; 
     }
 }
 
@@ -76,10 +76,10 @@ np{
 }
 
 .striped-rows tbody tr:nth-child(odd) {
-    background-color: #f2f2f2; /* Warna abu-abu */
+    background-color: #f2f2f2; 
 }
 .striped-rows tbody tr:nth-child(even) {
-    background-color: #ffffff; /* Warna putih */
+    background-color: #ffffff;
 }
 
 .btn{
@@ -93,6 +93,10 @@ np{
     color:yellow;
 }
 
+.btnn{
+    width: 180px;
+    margin-left: 12px;
+}
 
 .logo{
     height:55px;
@@ -104,7 +108,7 @@ np{
     border: 2px solid #ddd;
     border-radius: 15px;
     padding: 10px; 
-    transition: transform 0.3s ease; 
+    transition: transform 0.6s ease; 
     background-color: rgb(0, 0, 0); 
     margin-bottom: 20px;
     height: 470px;
@@ -144,3 +148,9 @@ np{
 }
 
 
+.btn-no-bg {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+}

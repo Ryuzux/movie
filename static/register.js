@@ -20,11 +20,31 @@ document.getElementById('register-form').addEventListener('submit', function(eve
     })
     .then(({ status, body }) => {
         if (status !== 200) {
-            alert(body.error || body.message);
+            Swal.fire({
+                icon: 'error',
+                title: 'Registration Failed',
+                text: body.message,
+                confirmButtonText: 'OK'
+            });
         } else {
-            alert('Registered successfully');
-            window.location.href = '/login';
+            Swal.fire({
+                icon: 'success',
+                title: 'Registration Successful',
+                text: 'Registered successfully',
+                confirmButtonText: 'OK'
+            }).then(() => {
+                window.location.href = '/login';
+            });
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(error => {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'An error occurred',
+            text: 'An error occurred while registering. Please try again later.',
+            confirmButtonText: 'OK'
+        });
+    });
 });
+

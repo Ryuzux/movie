@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     fetch('/check_session')
-        .then(response => response.json())
+        .then(respons => respons.json())
         .then(data => {
             const isLoggedIn = data.logged_in;
             updateLoginButton(isLoggedIn);
@@ -61,3 +61,4 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 });
+

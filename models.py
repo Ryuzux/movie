@@ -1,8 +1,6 @@
-from flask import Flask,request,jsonify
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from functools import wraps
-from werkzeug.security import check_password_hash
 from flask_session import Session
 from datetime import timedelta
 
@@ -30,7 +28,7 @@ Session(app)
 class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String, nullable=False)
-    launching = db.Column(db.Date, nullable=False)
+    launching = db.Column(db.Date)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'))
     ticket_price = db.Column(db.Integer, nullable=False)
     schedules = db.relationship('Schedule', back_populates='movie')
@@ -82,32 +80,32 @@ class User(db.Model):
     role = db.Column(db.String(20), default='user')
     transactions = db.relationship('Transaction', backref='info_user', lazy='dynamic')
 
-    def admin_required(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            username = request.authorization.username
-            user = User.query.filter_by(username=username).first()
-            if user and user.role == "admin":
-                return fn(*args, **kwargs)
-            else:
-                return jsonify({
-                    "error": "Unauthorized"
-                    }), 401
-        return wrapper
+    # def admin_required(fn):
+    #     @wraps(fn)
+    #     def wrapper(*args, **kwargs):
+    #         username = request.authorization.username
+    #         user = User.query.filter_by(username=username).first()
+    #         if user and user.role == "admin":
+    #             return fn(*args, **kwargs)
+    #         else:
+    #             return jsonify({
+    #                 "error": "Unauthorized"
+    #                 }), 401
+    #     return wrapper
 
-    @staticmethod
-    def admin_or_user_required(fn):
-        @wraps(fn)
-        def wrapper(*args, **kwargs):
-            auth = request.authorization
-            if not auth or not auth.username or not auth.password:
-                return jsonify({"error": "Unauthorized"}), 401
+    # @staticmethod
+    # def admin_or_user_required(fn):
+    #     @wraps(fn)
+    #     def wrapper(*args, **kwargs):
+    #         auth = request.authorization
+    #         if not auth or not auth.username or not auth.password:
+    #             return jsonify({"error": "Unauthorized"}), 401
 
-            current_user = User.query.filter_by(username=auth.username).first()
+    #         current_user = User.query.filter_by(username=auth.username).first()
 
-            if not current_user or not check_password_hash(current_user.password, auth.password):
-                return jsonify({"error": "Unauthorized"}), 401
+    #         if not current_user or not check_password_hash(current_user.password, auth.password):
+    #             return jsonify({"error": "Unauthorized"}), 401
 
-            return fn(current_user=current_user, *args, **kwargs)
+    #         return fn(current_user=current_user, *args, **kwargs)
         
-        return wrapper
+    #     return wrapper

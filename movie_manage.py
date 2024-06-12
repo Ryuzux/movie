@@ -1,8 +1,10 @@
 from flask import request, jsonify,render_template,url_for,redirect,session
-from models import *
+from models import app, Movie, Schedule, Category, db, User, Transaction
 from datetime import datetime, timedelta,date
 from werkzeug.utils import secure_filename
+from sqlalchemy import text
 import os
+
 app.config['UPLOAD_FOLDER'] = 'D:\python\latihan\mini_project\static\poster'
 
 def ensure_dir(directory):
@@ -10,8 +12,25 @@ def ensure_dir(directory):
         os.makedirs(directory)
 
 def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+    if not filename:
+        return False
+    allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in allowed_extensions
+
+@app.route('/movies/<int:movie_id>', methods=['GET'])
+def movie(movie_id):
+    movie = Movie.query.get(movie_id)
+    if not movie:
+        return jsonify({'error': 'Movie not found'}), 404
+    
+    return jsonify({
+        'id': movie.id,
+        'name': movie.name,
+        'launching': movie.launching,
+        'category_id': movie.category_id,
+        'ticket_price': movie.ticket_price,
+        'poster': movie.poster_path
+    }),200
 
 
 @app.route('/movie/<int:movie_id>')
@@ -27,13 +46,13 @@ def movie_detail(movie_id):
 def get_movies():
     movies = Movie.query.all()
     movies_list = [{'id': movie.id, 'name': movie.name} for movie in movies]
-    return jsonify(movies_list)
+    return jsonify(movies_list), 200
 
 @app.route('/category', methods=['GET'])
 def get_category():
     categories = Category.query.all()
     category_list = [{'id': category.id, 'name': category.name} for category in categories]
-    return jsonify(category_list)
+    return jsonify(category_list), 200
 
 @app.route('/upcoming')
 def upcoming():
@@ -42,6 +61,7 @@ def upcoming():
 
 @app.route('/add/movie/', methods=['POST'])
 def add_movie():
+    
     ensure_dir(app.config['UPLOAD_FOLDER']) 
 
     if 'name' not in request.form:
@@ -66,11 +86,19 @@ def add_movie():
     if poster and allowed_file(poster.filename):
         filename = secure_filename(poster.filename)
         poster.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-        poster_path = os.path.join('poster/', filename)  
+        poster_path = os.path.join('poster/', filename) 
+
+    if launching:
+        try:
+            launching_date = datetime.strptime(launching, '%Y-%m-%d')
+        except ValueError:
+            return jsonify({'error': 'invalid date format, should be YYYY-MM-DD'}), 400
+    else:
+        launching_date = None 
     
     mov = Movie(
         name=name,
-        launching=datetime.strptime(launching, '%Y-%m-%d'),
+        launching=launching_date,
         category_id=category_id,
         ticket_price=ticket_price,
         poster_path=poster_path
@@ -78,14 +106,16 @@ def add_movie():
     db.session.add(mov)
     db.session.commit()
 
-    return jsonify({
+    response=({
         'id': mov.id,
         'name': mov.name,
-        'launching': mov.launching.strftime('%Y-%m-%d'),
         'category_id': mov.category_id,
         'ticket_price': mov.ticket_price,
         'poster_path': mov.poster_path 
-    }), 201
+    })
+    if launching_date:
+        response['launching'] = launching_date.strftime('%Y-%m-%d')
+    return jsonify(response), 201
 
 
 
@@ -97,43 +127,50 @@ def add_movie_page():
 
 
 
-@app.route('/update/movie/', methods=['PUT', 'DELETE'])
-def update_movie():
-    ensure_dir(app.config['UPLOAD_FOLDER']) 
-
-    data = request.form.to_dict() 
-    update_id = data.get('id')
-    if not update_id:
-        return jsonify({'error': 'Movie id is required in the request'}), 400
-
-    movie = Movie.query.get(update_id)
+@app.route('/update/movie/<int:movie_id>', methods=['PUT'])
+def update_movie(movie_id):
+    movie = Movie.query.get(movie_id)
     if not movie:
         return jsonify({'error': 'Movie not found'}), 404
 
-    if request.method == 'PUT':
-        if 'name' in data:
-            movie.name = data['name']
-        if 'launching' in data:
-            movie.launching = data['launching']
-        if 'category_id' in data:
-            movie.category_id = data['category_id']
-        if 'ticket_price' in data:
-            movie.ticket_price = data['ticket_price']
+    launching = request.form.get('launching')
+    category_id = request.form.get('category_id')
+    ticket_price = request.form.get('ticket_price')
+    poster_path = request.files.get('poster_path')
 
-        if 'poster' in request.files:
-            poster = request.files['poster']
-            if poster and allowed_file(poster.filename):
-                filename = secure_filename(poster.filename)
-                poster.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                movie.poster_path = os.path.join('poster/', filename)
+    if launching:
+        movie.launching = launching
+    if category_id:
+        movie.category_id = category_id
+    if ticket_price:
+        movie.ticket_price = ticket_price
+    if poster_path:
+        poster_filename = secure_filename(poster_path.filename)
+        poster_path.save(os.path.join(app.config['UPLOAD_FOLDER'], poster_filename))
+        movie.poster_path = os.path.join('poster/', poster_filename)
 
+    try:
         db.session.commit()
         return jsonify({'message': 'Movie updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
-    elif request.method == 'DELETE':
-        db.session.delete(movie)
-        db.session.commit()
-        return jsonify({'message': 'Movie deleted successfully'}), 200
+    
+@app.route('/delete/movie/', methods=['DELETE'])
+def delete_movie():
+    movie_id = request.args.get('id')
+    if not movie_id:
+        return jsonify({'error': 'Movie id is required in the request'}), 400
+
+    movie = Movie.query.get(movie_id)
+    if not movie:
+        return jsonify({'error': 'Movie not found'}), 404
+
+    db.session.delete(movie)
+    db.session.commit()
+    return jsonify({'message': 'Movie deleted successfully'}), 200
+
 
 @app.route('/admin/update/movie')
 def update_movie_page():
@@ -150,30 +187,37 @@ def add_schedule():
     if 'movie_id' not in data or 'time' not in data:
         return jsonify({
             'error': 'movie_id and time must be provided'
-            }), 400
+        }), 400
 
     movie_id = data.get('movie_id')
     if not movie_id:
         return jsonify({
             'error': 'movie_id is required in the request'
-            }), 400
+        }), 400
     
     movie = Movie.query.get(movie_id)
     if not movie:
         return jsonify({
-                'error': 'Movie not found'
-                }), 404
+            'error': 'Movie not found'
+        }), 404
 
-    existing_schedule = Schedule.query.filter_by(movie_id=data['movie_id'], time=data['time']).first()
+    threshold_date = datetime.now().date() - timedelta(days=14)
+
+    existing_schedule = Schedule.query.filter(
+        Schedule.movie_id == data['movie_id'],
+        Schedule.time == data['time'],
+        Movie.launching > threshold_date
+    ).first()
+    
     if existing_schedule:
         return jsonify({
-            'error': 'The schedule already exists'
-            }), 400
+            'error': 'The schedule already exists for a movie airing less than 14 days'
+        }), 400
 
     if 'theater_id' not in data:
         return jsonify({
             'error': 'theater_id must be input'
-        })
+        }), 400
 
     new_schedule = Schedule(
         movie_id=data['movie_id'],
@@ -230,12 +274,17 @@ def update_schedule():
     if request.method == 'PUT':
         new_time = data.get('time')
         if new_time:
-            existing_schedule = Schedule.query.filter_by(
-                theater_id=sch.theater_id, time=new_time
-            ).first()
+            threshold_date = datetime.now().date() - timedelta(days=14)
+
+            existing_schedule = Schedule.query.filter(
+                Schedule.theater_id == sch.theater_id,
+                Schedule.time == new_time,
+                Movie.launching > threshold_date
+            ).join(Movie).first()
+            
             if existing_schedule and existing_schedule.id != schedule_id:
                 return jsonify({
-                    'error': 'Another schedule exists in this theater at the same time.'
+                    'error': 'Another schedule exists in this theater at the same time for a movie airing less than 14 days.'
                 }), 400
 
             sch.time = new_time
@@ -257,7 +306,6 @@ def update_schedule():
         return jsonify({
             'message': 'Schedule deleted successfully'
         }), 200
-
     
 @app.route('/admin/update/schedule/', methods=['GET'])
 def admin_update_schedule():
@@ -303,13 +351,14 @@ def search_movie():
         {
             'id': movie.id,
             'name': movie.name,
-            'launching': movie.launching.strftime('%Y-%m-%d'),
+            'launching': movie.launching.strftime('%Y-%m-%d') if movie.launching else 'Coming Soon',
             'category': movie.info_category.name,
             'poster_path': movie.poster_path
         }
         for movie in search_results
     ]
     return render_template('search.html', movie_info=movie_info, query=query)
+
 
     
 @app.route('/purchase_ticket', methods=['POST', 'GET'])
@@ -344,7 +393,16 @@ def purchase_ticket():
     else:
         return jsonify({'error': 'This movie is no longer active for booking'}), 400
 
-    booked_seat_count = db.session.query(db.func.sum(Transaction.quantity)).filter_by(schedule_id=schedule_id).filter_by(date=datetime.today().date()).scalar() or 0
+    booked_seat_count_query = text("""
+        SELECT COALESCE(SUM(quantity), 0) 
+        FROM transaction 
+        WHERE schedule_id = :schedule_id AND date = :date
+    """)
+    booked_seat_count = db.session.execute(
+        booked_seat_count_query,
+        {'schedule_id': schedule_id, 'date': datetime.today().date()}
+    ).scalar()
+
     available_seat_count = schedule.info_theater.total_seat - booked_seat_count
 
     if available_seat_count < quantity:
@@ -365,6 +423,3 @@ def purchase_ticket():
     db.session.add(new_transaction)
     db.session.commit()
     return jsonify({'success': True})
-
-
-

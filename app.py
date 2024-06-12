@@ -1,9 +1,10 @@
-from models import *
-from user import *
+from models import app, User, Movie
 from movie_manage import *
 from reporting import *
+from user import *
 from topup import *
-from flask import render_template,redirect, url_for,session,request
+from werkzeug.security import check_password_hash
+from flask import render_template,redirect,session,request,jsonify
 
 
 @app.route('/login', methods=['POST'])

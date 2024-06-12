@@ -23,7 +23,6 @@ document.getElementById('topup-form').onsubmit = function(event) {
             alert(data.error);
         } else {
             alert(data.message);
-            // Optionally, you can close the modal here
             let modal = bootstrap.Modal.getInstance(document.getElementById('topupModal'));
             modal.hide();
         }

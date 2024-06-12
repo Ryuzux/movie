@@ -44,17 +44,27 @@ def admin_report():
     
     transactions = Transaction.query.all()
     transaction_data = []
+    total_sum = 0  
 
     for transaction in transactions:
         schedule = Schedule.query.get(transaction.schedule_id)
-        movie = Movie.query.get(schedule.movie_id) if schedule else None  # Dapatkan objek Movie melalui Schedule
+        movie = Movie.query.get(schedule.movie_id) if schedule else None
+        ticket_price = movie.ticket_price if movie else 0
+        quantity = transaction.quantity or 0  
+        total_price = ticket_price * quantity  
+        total_sum += total_price  
+
         transaction_data.append({
             'id': transaction.id,
             'username': transaction.info_user.username,
-            'movie': movie.name,
+            'movie': movie.name if movie else "Unknown",  
             'date': transaction.date,
-            'quantity': transaction.quantity,
-            'ticket_price': movie.ticket_price if movie else 0  # Dapatkan harga tiket dari Movie
+            'quantity': quantity,
+            'total_price': f'{total_price:,.0f}'  
         })
     
-    return render_template('admin_report.html', transactions=transaction_data)
+    total_sum_formatted = f'{total_sum:,.0f}'  
+    
+    return render_template('admin_report.html', transactions=transaction_data, total_sum=total_sum_formatted)
+
+

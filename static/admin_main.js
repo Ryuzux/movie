@@ -26,3 +26,4 @@ document.getElementById("confirm-topup").onclick = function() {
 document.getElementById("report").onclick = function() {
     window.location.href = "/admin/report";
 };
+

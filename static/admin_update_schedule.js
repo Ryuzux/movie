@@ -18,7 +18,7 @@ document.getElementById('movie_id').addEventListener('change', function() {
         .then(response => response.json())
         .then(data => {
             const scheduleOptions = document.getElementById('schedule_options');
-            scheduleOptions.innerHTML = ''; // Clear existing options
+            scheduleOptions.innerHTML = '';
             Object.keys(data).forEach(theaterId => {
                 const theaterSchedules = data[theaterId];
                 const theaterGroup = document.createElement('div');
@@ -37,11 +37,9 @@ document.getElementById('movie_id').addEventListener('change', function() {
                     label.htmlFor = `schedule_${schedule.id}`;
                     label.textContent = `Time: ${schedule.time}`;
 
-                    // Add radio button and label to theater group
                     theaterGroup.appendChild(radioOption);
                     theaterGroup.appendChild(label);
 
-                    // Add event listener to update selected time when radio button is clicked
                     radioOption.addEventListener('change', function() {
                         document.getElementById('selected_time').value = schedule.time;
                     });
@@ -57,7 +55,7 @@ function updateSchedule(event) {
     var scheduleId = document.querySelector('input[name="schedule_id"]:checked').value;
     var time = document.getElementById("selected_time").value;
 
-    var updateData = { schedule_id: scheduleId }; // Pastikan schedule_id disertakan dalam data
+    var updateData = { schedule_id: scheduleId }; 
     if (time) updateData.time = time;
 
     fetch('/update/schedule/', {
@@ -87,7 +85,6 @@ function updateSchedule(event) {
     })
     .catch(error => console.error('Error:', error));
 }
-
 
 
 function deleteSchedule() {

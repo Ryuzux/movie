@@ -18,16 +18,25 @@ document.getElementById('login-form').addEventListener('submit', function(event)
         if (data.success) {
             window.location.href = data.redirect_url;
         } else {
-            alert('Login failed: ' + data.error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Login Failed',
+                text: data.error,
+                confirmButtonText: 'OK'
+            });
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while logging in. Please try again later.');
+        Swal.fire({
+            icon: 'error',
+            title: 'An error occurred',
+            text: 'invalid username or password',
+            confirmButtonText: 'OK'
+        });
     });
 });
 
-// Pengecekan sesi pengguna saat memuat halaman
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/check_session', {
         method: 'GET'
@@ -44,5 +53,12 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(error => {
         console.error('Error checking session:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'An error occurred',
+            text: 'An error occurred while checking session. Please try again later.',
+            confirmButtonText: 'OK'
+        });
     });
 });
+

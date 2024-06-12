@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='iconlogo.png') }}"></head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon.png') }}"></head>
 <body>
     <section>
         <nav>
@@ -25,7 +25,7 @@
     
                 <div class="btn-group">
                     <form class="form-inline" action="/search" method="GET" id="search-form" style="padding-top: 10px;">
-                        <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" id="search-input" name="query">
+                        <input class="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" id="search-input" name="query" required>
                     </form>
                     <button class="btn" type="submit" form="search-form">
                         <i class="fas fa-search fa-xl"></i>
@@ -76,20 +76,27 @@
                 </div>
                 <div class="col-md-8">
                     <div class="card">
-                        <div class="card-body">
+                        <div class="card-body bg-primary-subtle">
                             <h1 class="mb-3 ">Description</h1>
                             <p class="mb-3 ">{{ movie.description }}</p>
                             <h3 class="mb-3">Category</h3>
                             <p class="mb-3 ">{{ movie.info_category.name }}</p>
                             <h3 class="mb-3">Launching</h3>
-                            <p class="mb-3 ">{{ movie.launching.strftime('%Y-%m-%d') }}</p>
+                            <p class="mb-3">
+                                {% if movie.launching %}
+                                    {{ movie.launching.strftime('%Y-%m-%d') }}
+                                {% else %}
+                                    Coming Soon
+                                {% endif %}
+                            </p>
+
                             <h3 class="mb-3">Ticket Price</h3>
                             <p class="mb-3 ">Rp {{ movie.ticket_price }}</p>
                             <h3 class="mb-3">Schedule</h3>
                             <ul>
                                 {% for schedule in movie.schedules %}
                                     <li class="mb-3 ">{{ schedule.time.strftime('%H:%M') }} - Theater {{ schedule.info_theater.room }}
-                                        <button class="btn btn-success beli-tiket-btn" data-schedule-id="{{ schedule.id }}">Buy Ticket</button>
+                                        <button class="btn btn-success buy-ticket-btn" data-schedule-id="{{ schedule.id }}">Buy Ticket</button>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -110,7 +117,7 @@
                     <div class="modal-body">
                         <form id="purchase-form">
                             <div class="mb-3">
-                                <label for="quantity" class="form-label">How much ticket do u want ?</label>
+                                How much ticket do u want ?
                                 <input type="number" class="form-control" id="quantity" name="quantity" required>
                             </div>
                             <button type="submit" class="btn btn-primary">Buy Ticket</button>
@@ -129,7 +136,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <!-- Custom JavaScript -->
-    <script src="{{ url_for('static', filename='search.js') }}"></script>
     <script src="{{ url_for('static', filename='main.js') }}"></script>
     <script src="{{ url_for('static', filename='topup.js') }}"></script>
     <script src="{{ url_for('static', filename='session.js') }}"></script>
