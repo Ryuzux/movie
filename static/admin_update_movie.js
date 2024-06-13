@@ -65,6 +65,14 @@ function updateMovie() {
     var movieTicketPrice = document.getElementById("ticket_price").value;
     var moviePosterPath = document.getElementById("poster_path").files[0];
 
+        if (moviePosterPath) {
+        var allowedExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+        var fileExtension = moviePosterPath.name.split('.').pop().toLowerCase();
+        if (!allowedExtensions.includes(fileExtension)) {
+            Swal.fire('Error', 'Unsupported file format. Allowed formats: ' + allowedExtensions.join(', '), 'error');
+            return;
+        }
+    }
     var formData = new FormData();
     formData.append("launching", movieLaunching);
     formData.append("category_id", movieCategory);

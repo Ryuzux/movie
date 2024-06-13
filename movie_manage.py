@@ -132,6 +132,8 @@ def update_movie(movie_id):
     movie = Movie.query.get(movie_id)
     if not movie:
         return jsonify({'error': 'Movie not found'}), 404
+    if not allowed_file:
+        return jsonify({'error': 'Format file does not support'})
 
     launching = request.form.get('launching')
     category_id = request.form.get('category_id')
